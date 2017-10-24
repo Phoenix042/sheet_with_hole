@@ -42,6 +42,20 @@ def data_refine(h,v,r):
     else:
         pass
     return h,v,r
+def yc(tem,constant,nu1,nu2):
+    a=[]
+    if nu1%2==nu2:
+        a.append(round(tem,6))
+    else:
+        a.append(round(tem+constant,6))
+    return a
+def m_ext(sr_no,num,num1,nu1,nu2,nu3):
+    a=[]
+    if num1%2==nu1:
+        a.append(2*sr_no[num]-num1+nu2)
+    else:
+        a.append(2*sr_no[num-1]-num1+nu3)
+    return a
 print('Every input value has to be in unit of hexagon')
 hori=int(input('Enter the horizontal width:'))
 vert=int(input('Enter the vertical height:'))
@@ -58,20 +72,13 @@ bond=1.41
 tem=0
 distorted=[0]*(int(vert/2)-radi+1)
 Yco=[round((constant+bond),6),round(constant,6)]
-def yc(tem,constant,n1,n2):
-    a=[]
-    if n1%2==n2:
-        a.append(round((tem+constant),6))
-    else:
-        a.append(round(tem,6))
-    return a
 for num in range(vert+1):
     if num==0:
         for num1 in range(2,sr_no[0]):
             r.append(num1+2)
             l.append(num1)
             Xco.append(round((Xco[-1]+constant_2),6))
-            Yco.extend(yc(tem,constant,num1,1))
+            Yco.extend(yc(tem,constant,num1,0))
     elif num not in dist_row:
         Xco.append(Xco[-1])
         Yco.append(round(tem,6))
@@ -82,7 +89,7 @@ for num in range(vert+1):
                 Xco.append(round((Xco[-1]-constant_2),6))
             else:
                 Xco.append(round((Xco[-1]+constant_2),6))
-            Yco.extend(yc(tem,constant,num1,1))
+            Yco.extend(yc(tem,constant,num1,0))
         r.append(sr_no[num]+1)
         l.append(sr_no[num]-1)
     else:
@@ -103,19 +110,13 @@ for num in range(vert+1):
                         l.append(' ')
                 else:
                     Xco.append(round((Xco[-1]+constant_2*(2+difference_atom)),6))
-                    Xco[nu-1]+=((2*radi)+1)
                     r.append(nu+1)
                     l.append(' ')
+                    Xco[nu-1]+=(2*radi+1)
                 if nu<distorted_atom:
-                    if nu%2==1:
-                        Yco.append(round(tem,6))
-                    else:
-                        Yco.append(round(tem+constant,6))
+                    Yco.extend(yc(tem,constant,nu,1))
                 else:
-                    if nu%2==0:
-                        Yco.append(round(tem,6))
-                    else:
-                        Yco.append(round(tem+constant,6))
+                    Yco.extend(yc(tem,constant,nu,0))
         else:
             for nu in range(sr_no[num-1]+1,sr_no[num]):
                 if nu!=distorted_atom:
@@ -131,28 +132,15 @@ for num in range(vert+1):
                     r.append(nu-1)
                     l.append(' ')
                 if nu<=distorted_atom:
-                    if nu%2==0:
-                        Yco.append(round(tem,6))
-                    else:
-                        Yco.append(round(tem+constant,6))
+                    Yco.extend(yc(tem,constant,nu,0))
                 else:
-                    if nu%2==1:
-                        Yco.append(round(tem,6))
-                    else:
-                        Yco.append(round(tem+constant,6))
+                    Yco.extend(yc(tem,constant,nu,1))
         r.append(sr_no[num]+1)
         l.append(sr_no[num]-1)
     tem+=round((bond+constant),6)
-myfile=open('./hole.xyz','w')
+myfile=open('./cut.xyz','w')
 myfile.write('{}\t \n'.format(sr_no[-1]))
 m=[' ',' ',' ']
-def m_ext(sr_no,num,num1,nu1,nu2,nu3):
-    a=[]
-    if num1%2==nu1:
-        a.append(2*sr_no[num]-num1+nu2)
-    else:
-        a.append(2*sr_no[num-1]-num1+nu3)
-    return a
 for num in range(vert+1):
     if num==0:
         for num1 in range(4,sr_no[0]):
@@ -227,12 +215,43 @@ for num in range(vert+1):
                 else:
                     m.append(2*sr_no[num-1]-num1+1+down)
         m.append(' ')
+m_disp=[]
+for num in range(max(dist_row)+1,vert+1):
+    if num%2==0:
+        m_disp.append(int((sr_no[num]+sr_no[num-1])/2))
+    else:
+        m_disp.append(int((sr_no[num-1]+sr_no[num])/2+1))
+t_inc=0
+inc=0
+for num in range(max(dist_row)+1,vert+1):
+    zo=m_disp[t_inc]
+    if num<(max(dist_row)+3):
+        if num%2==1:
+            l[zo-1],r[zo-2]=' ',m_disp[t_inc+2]
+        else:
+            r[zo-1],l[zo]=' ',m_disp[t_inc+2]
+    elif num in range((max(dist_row)+3),(vert-1)):
+        if num%2==1:
+            l[zo-1],r[zo-2]=(m_disp[t_inc-2]-1),m_disp[t_inc+2]
+        else:
+            r[zo-1],l[zo]=(1+m_disp[t_inc-2]),m_disp[t_inc+2]
+    else:
+        if num%2==1:
+            l[zo-1],r[zo-2]=(m_disp[t_inc-2]-1),' '
+        else:
+            r[zo-1],l[zo]=(1+m_disp[t_inc-2]),' '
+    t_inc+=1
+    inc+=1
 for num in range(sr_no[-1]):
     if m[num]!=' ':
         if m[num]>sr_no[-1]:
             m[num]=' '
-    if r[num]>sr_no[-1]:
-        r[num],l[num]=l[num],' '
+    if num>(sr_no[-1]-5):
+        if r[num]>sr_no[-1]:
+            r[num],l[num]=l[num],' '
+    if r[num]==' ' and l[num]!=' ' and m[num]!=' ':
+        r[num],l[num]=l[num],m[num]
+        m[num]=' '
     if l[num]==' ' and m[num]!=' ':
         l[num],m[num]=m[num],''
     if l[num]==' ' and m[num]==' ':
